@@ -1,16 +1,18 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <vector>
+
 using namespace std;
 
 /********************DO NOT EDIT**********************/
 // Function prototype. Defined later.
-void read_opinions(string filename); // reads file into opinions vector and updates total_nodes as needed
-void read_edges(string filename); // reads file into edge_list, defined later
-void build_adj_matrix(); // convert edge_list to adjacency matrix
+void read_opinions(string filename); // reads file into opinions vector and
+                                     // updates total_nodes as needed
+void read_edges(string filename);    // reads file into edge_list, defined later
+void build_adj_matrix();             // convert edge_list to adjacency matrix
 
-int total_nodes = 0; // We keep track of the total number of nodes based on largest node id.
-
+int total_nodes =
+    0; // We keep track of the total number of nodes based on largest node id.
 
 /****************************************************************/
 
@@ -24,97 +26,132 @@ std::vector<std::vector<int>> adj;
 // edge list: each row contains {source, target}
 std::vector<std::vector<int>> edge_list;
 
-void build_adj_matrix()
-{
-    
+void build_adj_matrix() {
+  adj = std::vector<std::vector<int>>(total_nodes,
+                                      std::vector<int>(total_nodes, 0));
+  for (std::vector<int> edge : edge_list) {
+    adj[edge[0]][edge[1]] = 1;
+    adj[edge[1]][edge[0]] = 1;
+  }
 }
 
-double calculate_fraction_of_ones()
-{
-   
+double calculate_fraction_of_ones() {
+  int count = 0;
+  for (int i = 0; i < total_nodes; i++) {
+    if (opinions[i] == 1) {
+      count++;
+    }
+  }
+  return (double)count / total_nodes;
 }
 
 // For a given node, count majority opinion among its neighbours. Tie -> 0.
-int get_majority_friend_opinions(int node)
-{
-
+int get_majority_friend_opinions(int node) {
+  int count_0 = 0;
+  int count_1 = 0;
+  for (int i = 0; i < total_nodes; i++) {
+    if (adj[node][i] == 1) {
+      if (opinions[i] == 1) {
+        count_1++;
+      } else {
+        count_0++;
+      }
+    }
+  }
+  return (count_1 > count_0) ? 1 : 0;
 }
 
 // Calculate new opinions for all voters and return if anyone's opinion changed
-bool update_opinions()
-{
-
+bool update_opinions() {
+  bool changed = false;
+  for (int i = 0; i < total_nodes; i++) {
+    int majority = get_majority_friend_opinions(i);
+    if (majority > 0) {
+      if (opinions[i] != 1) {
+        opinions[i] = 1;
+        changed = true;
+      }
+    } else {
+      if (opinions[i] != 0) {
+        opinions[i] = 0;
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 int main() {
-    // no preallocation; vectors grow on demand
+  // no preallocation; vectors grow on demand
 
-    // Read input files
-    read_opinions("opinions.txt"); 
-    read_edges("edge_list.txt");
+  // Read input files
+  read_opinions("opinions.txt");
+  read_edges("edge_list.txt");
 
-    // convert edge list into adjacency matrix once we know total_nodes
-    build_adj_matrix();
-    
-    cout << "Total nodes: " << total_nodes << endl;
-    
-    // Run simulation
-    int max_iterations = 30;
-    int iteration = 0;
-    bool opinions_changed = true;
-    
-    // Print initial state
-    cout << "Iteration " << iteration << ": fraction of 1's = " 
-         << calculate_fraction_of_ones() << endl;
-    
-    /// (6)  //////////////////////////////////////////////
-    
+  // convert edge list into adjacency matrix once we know total_nodes
+  build_adj_matrix();
 
-    ////////////////////////////////////////////////////////
-    // Print final result
-    double final_fraction = calculate_fraction_of_ones();
-    cout << "Iteration " << iteration << ": fraction of 1's = " 
-         << final_fraction << endl;
-    
-    if(final_fraction == 1.0)
-        cout << "Consensus reached: all 1's" << endl;
-    else if(final_fraction == 0.0)
-        cout << "Consensus reached: all 0's" << endl;
-    else
-        cout << "No consensus reached after " << iteration << " iterations" << endl;
-    
-    return 0;
+  cout << "Total nodes: " << total_nodes << endl;
+
+  // Run simulation
+  int max_iterations = 30;
+  int iteration = 0;
+  bool opinions_changed = true;
+
+  // Print initial state
+  cout << "Iteration " << iteration
+       << ": fraction of 1's = " << calculate_fraction_of_ones() << endl;
+
+  /// (6)  //////////////////////////////////////////////
+  while (iteration < max_iterations) {
+    opinions_changed = update_opinions();
+    iteration++;
+    cout << "Iteration " << iteration
+         << ": fraction of 1's = " << calculate_fraction_of_ones() << endl;
+  }
+  ////////////////////////////////////////////////////////
+  // Print final result
+  double final_fraction = calculate_fraction_of_ones();
+  cout << "Iteration " << iteration << ": fraction of 1's = " << final_fraction
+       << endl;
+
+  if (final_fraction == 1.0)
+    cout << "Consensus reached: all 1's" << endl;
+  else if (final_fraction == 0.0)
+    cout << "Consensus reached: all 0's" << endl;
+  else
+    cout << "No consensus reached after " << iteration << " iterations" << endl;
+
+  return 0;
 }
 
-
-/*********** Functions to read files **************************/ 
+/*********** Functions to read files **************************/
 
 // Read opinion vector from file.
-void read_opinions(string filename)
-{
-    ifstream file(filename);
-    int id, opinion;
-    while(file >> id >> opinion)
-    {
-        opinions.push_back(opinion);
-        if(id >= total_nodes) total_nodes = id+1;
-    }
-    file.close();
+void read_opinions(string filename) {
+  ifstream file(filename);
+  int id, opinion;
+  while (file >> id >> opinion) {
+    opinions.push_back(opinion);
+    if (id >= total_nodes)
+      total_nodes = id + 1;
+  }
+  file.close();
 }
 
 // Read edge list from file and update total nodes as needed.
-void read_edges(string filename)
-{
-    ifstream file(filename);
-    int source, target;
-    
-    while(file >> source >> target)
-    {
-        edge_list.push_back({source, target});
-        if(source >= total_nodes) total_nodes = source+1;
-        if(target >= total_nodes) total_nodes = target+1;
-    }
-    file.close();
+void read_edges(string filename) {
+  ifstream file(filename);
+  int source, target;
+
+  while (file >> source >> target) {
+    edge_list.push_back({source, target});
+    if (source >= total_nodes)
+      total_nodes = source + 1;
+    if (target >= total_nodes)
+      total_nodes = target + 1;
+  }
+  file.close();
 }
 
 /********************************************************************** */
