@@ -31,7 +31,6 @@ void build_adj_matrix() {
                                       std::vector<int>(total_nodes, 0));
   for (std::vector<int> edge : edge_list) {
     adj[edge[0]][edge[1]] = 1;
-    adj[edge[1]][edge[0]] = 1;
   }
 }
 
@@ -103,7 +102,7 @@ int main() {
        << ": fraction of 1's = " << calculate_fraction_of_ones() << endl;
 
   /// (6)  //////////////////////////////////////////////
-  while (iteration < max_iterations) {
+  while (iteration < max_iterations && opinions_changed) {
     opinions_changed = update_opinions();
     iteration++;
     cout << "Iteration " << iteration
