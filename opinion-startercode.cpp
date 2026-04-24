@@ -38,7 +38,7 @@ void build_adj_matrix() {
 }
 
 double calculate_fraction_of_ones() {
-int count = 0;
+  int count = 0;
   for (int opinion : opinions) {
     count += opinion; 
   }
