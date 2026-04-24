@@ -20,43 +20,41 @@ int total_nodes =
 // simple vector to hold each node's opinion (0 or 1)
 std::vector<int> opinions;
 
-// global adjacency matrix initialized later
-std::vector<std::vector<int>> adj;
+// global adjacency list instead of matrix initialized later
+std::vector<std::vector<int>> adj_list;
 
 // edge list: each row contains {source, target}
-std::vector<std::vector<int>> edge_list;
+std::vector<std::pair<int, int>> edge_list;
 
 void build_adj_matrix() {
-  adj = std::vector<std::vector<int>>(total_nodes,
-                                      std::vector<int>(total_nodes, 0));
-  for (std::vector<int> edge : edge_list) {
-    adj[edge[0]][edge[1]] = 1;
+  adj_list.assign(total_nodes, std::vector<int>());
+  
+  for (const auto& edge : edge_list) {
+    adj_list[edge.first].push_back(edge.second);
   }
+  
+  edge_list.clear();
+  edge_list.shrink_to_fit();
 }
 
 double calculate_fraction_of_ones() {
-  int count = 0;
-  for (int i = 0; i < total_nodes; i++) {
-    if (opinions[i] == 1) {
-      count++;
-    }
+int count = 0;
+  for (int opinion : opinions) {
+    count += opinion; 
   }
   return (double)count / total_nodes;
 }
 
 // For a given node, count majority opinion among its neighbours. Tie -> 0.
 int get_majority_friend_opinions(int node) {
-  int count_0 = 0;
   int count_1 = 0;
-  for (int i = 0; i < total_nodes; i++) {
-    if (adj[node][i] == 1) {
-      if (opinions[i] == 1) {
-        count_1++;
-      } else {
-        count_0++;
-      }
-    }
+  
+  
+  for (int neighbor : adj_list[node]) {
+    count_1 += opinions[neighbor];
   }
+  
+  int count_0 = adj_list[node].size() - count_1;
   return (count_1 > count_0) ? 1 : 0;
 }
 
@@ -65,16 +63,9 @@ bool update_opinions() {
   bool changed = false;
   for (int i = 0; i < total_nodes; i++) {
     int majority = get_majority_friend_opinions(i);
-    if (majority > 0) {
-      if (opinions[i] != 1) {
-        opinions[i] = 1;
-        changed = true;
-      }
-    } else {
-      if (opinions[i] != 0) {
-        opinions[i] = 0;
-        changed = true;
-      }
+    if (opinions[i] != majority) {
+      opinions[i] = majority;
+      changed = true;
     }
   }
   return changed;
